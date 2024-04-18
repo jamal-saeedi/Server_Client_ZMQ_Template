@@ -20,7 +20,7 @@ def get_session():
     max_workers = os.cpu_count()  # Get the number of available CPUs
 
     config = tf.compat.v1.ConfigProto(
-        device_count={"CPU": max_workers, "GPU": 1}, allow_soft_placement=True
+        device_count={"CPU": max_workers , "GPU": 1}, allow_soft_placement=True
     )
     config.gpu_options.allow_growth = True
     sess = tf.compat.v1.InteractiveSession(config=config, graph=graph)
