@@ -20,7 +20,7 @@ def get_session():
     max_workers = os.cpu_count()  # Get the number of available CPUs
 
     config = tf.compat.v1.ConfigProto(
-        device_count={"CPU": max_workers , "GPU": 1}, allow_soft_placement=True
+        device_count={"CPU": max_workers, "GPU": 1}, allow_soft_placement=True
     )
     config.gpu_options.allow_growth = True
     sess = tf.compat.v1.InteractiveSession(config=config, graph=graph)
@@ -93,6 +93,8 @@ class RequestHandler(threading.Thread):
         self.context = context
         self.msg = msg
         self._id = id
+        self.buffered = io.BytesIO()
+        self.image_data = None
 
     def process(self, obj):
 
@@ -127,11 +129,10 @@ class RequestHandler(threading.Thread):
         return_dict = {}
 
         # Convert processed image to base64
-        buffered = io.BytesIO()
-        img_original.save(buffered, format="JPEG")
-        image_data = b64encode(buffered.getvalue()).decode("utf-8")
+        img_original.save(self.buffered, format="JPEG")
+        self.image_data = b64encode(self.buffered.getvalue()).decode("utf-8")
 
-        return_dict = {"preds": preds, "image": image_data}  # Convert bytes to string
+        return_dict = {"preds": preds, "image": self.image_data}  # Convert bytes to string
 
         return return_dict
 
