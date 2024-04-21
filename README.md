@@ -1,4 +1,4 @@
-# ZeroMQ Image Classification with TensorFlows
+# ZeroMQ Image Classification with Python
 
 This project demonstrates a template for using ZeroMQ to send an image to a server, receive a classifier prediction, along with a processed image, and print and show the results.
 
