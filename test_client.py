@@ -4,49 +4,52 @@ import zmq
 import matplotlib.pylab as plt
 from PIL import Image
 import zmq
-from base64 import b64decode, b64encode
 import json
 import io
 
+# Generate a unique ID for the client
+_rid = "{}".format(str(uuid.uuid4()))
 
+# Initialize ZeroMQ context and socket
+context = zmq.Context()
+socket = context.socket(zmq.DEALER)
+socket.setsockopt_string(zmq.IDENTITY, _rid)
+socket.connect("tcp://localhost:5576")
+print("Client %s started\n" % _rid)
+
+# Initialize a poller for the socket
+poll = zmq.Poller()
+poll.register(socket, zmq.POLLIN)
+
+# Define a function to test the ZeroMQ embedded server
 def test_zmq_embdserver(image_file_name):
-    _rid = "{}".format(str(uuid.uuid4()))
-
-    global img_str
-
+    # Open and read the image file in binary mode
     with open(image_file_name, "rb") as image_file:
         img_str = base64.b64encode(image_file.read())
 
-    context = zmq.Context()
-    socket = context.socket(zmq.DEALER)
-    socket.setsockopt_string(zmq.IDENTITY, _rid)
-    socket.connect("tcp://localhost:5576")
-    print("Client %s started\n" % _rid)
-    poll = zmq.Poller()
-    poll.register(socket, zmq.POLLIN)
-
-    obj = socket.send_json({"payload": img_str.decode("utf-8"), "_rid": _rid})
+    # Send the image data and unique ID to the server as JSON
+    socket.send_json({"payload": img_str.decode("utf-8"), "_rid": _rid})
 
     received_reply = False
+    # Wait for a reply from the server
     while not received_reply:
+        # Poll the socket for incoming messages
         sockets = dict(poll.poll(1000))
         if socket in sockets:
             if sockets[socket] == zmq.POLLIN:
+                # Receive and decode the message from the server
                 msg = socket.recv_string()
                 data = json.loads(msg)
-                preds = data["preds"]
-                print(preds)
-                # Handling the Image
-                image_data = base64.b64decode(data["image"])
-                image = Image.open(io.BytesIO(image_data))
+                preds = data["preds"]  # Extract predictions from the received data
+                print(preds)  # Print the predictions
+                # Decode the image data and display the image
+                image = Image.open(io.BytesIO(base64.b64decode(data["image"])))
                 image.show()
-                del msg
-                received_reply = True
+                received_reply = True  # Set the flag to indicate that a reply has been received
 
-    socket.close()
-    context.term()
-
-
+# Entry point of the script
 if __name__ == "__main__":
-    name = "sample.png"
-    test_zmq_embdserver(name)
+    name = "sample.png"  # Specify the name of the sample image file
+    test_zmq_embdserver(name)  # Call the test function with the sample image file
+    socket.close()  # Close the socket connection
+    context.term()  # Terminate the ZeroMQ context

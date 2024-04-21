@@ -107,11 +107,11 @@ class RequestHandler(threading.Thread):
             img = img.convert("RGB")
         # resize the input image and preprocess it
         img = img.resize((224, 224))
+
         img = img_to_array(img)
         img = np.expand_dims(img, axis=0)
         img = preprocess_input(img)
 
-        # set_session(sess)
         with session.as_default():
             with graph.as_default():
                 predictions = model.predict(img)
@@ -122,7 +122,8 @@ class RequestHandler(threading.Thread):
         pred_strings = []
         for _, pred_class, pred_prob in predictions:
             pred_strings.append(
-                str(pred_class).strip() + " : " + str(round(pred_prob, 5)).strip()
+                str(pred_class).strip() + " : " +
+                str(round(pred_prob, 5)).strip()
             )
         preds = ", ".join(pred_strings)
 
@@ -132,7 +133,10 @@ class RequestHandler(threading.Thread):
         img_original.save(self.buffered, format="JPEG")
         self.image_data = b64encode(self.buffered.getvalue()).decode("utf-8")
 
-        return_dict = {"preds": preds, "image": self.image_data}  # Convert bytes to string
+        return_dict = {
+            "preds": preds,
+            "image": self.image_data,
+        }  # Convert bytes to string
 
         return return_dict
 
@@ -140,7 +144,7 @@ class RequestHandler(threading.Thread):
         # Worker will process the task and then send the reply back to the DEALER backend socket via inproc
         worker = self.context.socket(zmq.DEALER)
         worker.connect("inproc://backend_endpoint")
-        print("Request handler started to process %s\n" % self.msg)
+        # print("Request handler started to process %s\n" % self.msg)
 
         # Simulate a long-running operation
         output = self.process(self.msg)
@@ -148,8 +152,6 @@ class RequestHandler(threading.Thread):
         worker.send(self._id, zmq.SNDMORE)
 
         worker.send_string(json.dumps(output))
-
-        del self.msg
 
         print("Request handler quitting.\n")
         worker.close()
