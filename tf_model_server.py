@@ -18,10 +18,20 @@ def get_session():
     tf.compat.v1.reset_default_graph()  # Only needed in TensorFlow 2.x
     graph = tf.Graph()
     max_workers = os.cpu_count()  # Get the number of available CPUs
+    gpus = tf.config.list_physical_devices("GPU")
+    if gpus:
+        print("GPU being deployed")
 
-    config = tf.compat.v1.ConfigProto(
-        device_count={"CPU": max_workers, "GPU": 1}, allow_soft_placement=True
-    )
+        config = tf.compat.v1.ConfigProto(
+            device_count={"CPU": max_workers, "GPU": 1}, allow_soft_placement=True
+        )
+        config.gpu_options.allow_growth = True
+    else:
+
+        config = tf.compat.v1.ConfigProto(
+            device_count={"CPU": max_workers}, allow_soft_placement=True
+        )
+
     config.gpu_options.allow_growth = True
     sess = tf.compat.v1.InteractiveSession(config=config, graph=graph)
     tf.compat.v1.keras.backend.set_session(sess)
@@ -122,8 +132,7 @@ class RequestHandler(threading.Thread):
         pred_strings = []
         for _, pred_class, pred_prob in predictions:
             pred_strings.append(
-                str(pred_class).strip() + " : " +
-                str(round(pred_prob, 5)).strip()
+                str(pred_class).strip() + " : " + str(round(pred_prob, 5)).strip()
             )
         preds = ", ".join(pred_strings)
 
