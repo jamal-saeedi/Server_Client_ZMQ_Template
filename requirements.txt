@@ -3,4 +3,6 @@ Pillow==6.2.2
 pyzmq==19.0.2
 tensorflow_gpu==2.10.1
 tensorflow_addons==0.19.0
-
+timm==1.0.3
+torch==1.12.1
+torchvision==0.13.1
